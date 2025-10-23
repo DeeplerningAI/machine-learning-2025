@@ -1,8 +1,10 @@
 import pickle
 
+# Load model và DictVectorizer
 with open('model.bin', 'rb') as f_in:
-    pipeline = pickle.load(f_in)
+    dv, model = pickle.load(f_in)
 
+# Dữ liệu mẫu
 datapoint = {
     'gender': 'female',
     'seniorcitizen': 0,
@@ -19,11 +21,11 @@ datapoint = {
     'streamingmovies': 'no',
     'contract': 'month-to-month',
     'paperlessbilling': 'yes',
-    'paymentmethod': 'electronic_check',
+    'paymentmethod': 'electronic check',
     'tenure': 1,
     'monthlycharges': 29.85,
     'totalcharges': 29.85
 }
 
-result = pipeline.predict_proba(datapoint)[0, 1]
-print(f'Probability of churn: {result:.3f}')
+# Chuyển đổi dữ liệu sang dạng vector
+X

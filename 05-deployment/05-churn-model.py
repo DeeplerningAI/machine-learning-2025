@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import pandas as pd
 import numpy as np
 
@@ -17,7 +11,7 @@ from sklearn.metrics import roc_auc_score
 
 
 
-# In[2]:
+# data preprocessing
 
 
 df = pd.read_csv('data-week-3.csv')
@@ -35,13 +29,13 @@ df.totalcharges = df.totalcharges.fillna(0)
 df['churn'] = (df['churn'] == 'yes').astype(int)
 
 
-# In[3]:
+# In[15]:
 
 
 df_full_train, df_test = train_test_split(df, test_size=0.2, random_state=1)
 
 
-# In[4]:
+# In[16]:
 
 
 numerical = ['tenure', 'monthlycharges', 'totalcharges']
@@ -66,14 +60,14 @@ categorical = [
 ]
 
 
-# In[9]:
+# In[36]:
 
 
 def train(df_train, y_train, C=1.0):
-    dicts = df_train[categorical + numerical].to_dict(orient='records')
+    dicts_train = df_train[categorical + numerical].to_dict(orient='records')
 
     dv = DictVectorizer(sparse=False)
-    X_train = dv.fit_transform(dicts)
+    X_train = dv.fit_transform(dicts_train)
 
     model = LogisticRegression(C=C, max_iter=5000)
     model.fit(X_train, y_train)
@@ -81,55 +75,63 @@ def train(df_train, y_train, C=1.0):
     return dv, model
 
 
-# In[10]:
+# In[37]:
 
 
 def predict(df, dv, model):
-    dicts = df[categorical + numerical].to_dict(orient='records')
+    dicts_predict = df[categorical + numerical].to_dict(orient='records')
 
-    X = dv.transform(dicts)
+    X = dv.transform(dicts_predict)
     y_pred = model.predict_proba(X)[:, 1]
 
     return y_pred
 
 
-# In[11]:
+# In[49]:
 
 
 C = 1.0
 n_splits = 5
 
 
-# In[12]:
+# In[50]:
 
 
 kfold = KFold(n_splits=n_splits, shuffle=True, random_state=1)
 
-scores = []
+for C in [0.01, 0.1, 1, 10]:
 
-for train_idx, val_idx in kfold.split(df_full_train):
-    df_train = df_full_train.iloc[train_idx]
-    df_val = df_full_train.iloc[val_idx]    
+    scores = []
 
-    y_train = df_train.churn.values
-    y_val = df_val.churn.values
+    for train_idx, val_idx in kfold.split(df_full_train):
+        df_train = df_full_train.iloc[train_idx]
+        df_val = df_full_train.iloc[val_idx]    
 
-    dv, model = train(df_train, y_train, C=C)
-    y_pred = predict(df_val, dv, model)
+        y_train = df_train.churn.values
+        y_val = df_val.churn.values
 
-    auc = roc_auc_score(y_val, y_pred)
-    scores.append(auc)
+        dv, model = train(df_train, y_train, C=C)
+        y_pred = predict(df_val, dv, model)
 
-print('C=%s %.3f +- %.3f' % (C, np.mean(scores), np.std(scores)))
+        auc = roc_auc_score(y_val, y_pred)
+        scores.append(auc)
+
+    print('C=%s %.3f +- %.3f' % (C, np.mean(scores), np.std(scores)))
 
 
-# In[13]:
+# In[53]:
+
+
+auc
+
+
+# In[54]:
 
 
 scores
 
 
-# In[15]:
+# In[66]:
 
 
 dv, model = train(df_full_train, df_full_train.churn.values, C=1.0)
@@ -142,20 +144,20 @@ auc
 
 # save the model
 
-# In[16]:
+# In[67]:
 
 
 import pickle
 
 
-# In[21]:
+# In[68]:
 
 
 output_file = f'model_C={C}.bin'
 output_file
 
 
-# In[24]:
+# In[69]:
 
 
 f_out = open(output_file, 'wb')
@@ -163,53 +165,41 @@ pickle.dump((dv, model), f_out)
 f_out.close()
 
 
-# In[26]:
+# In[70]:
 
 
 with open(output_file, 'wb') as f_out: # 'wb' means write-binary
     pickle.dump((dv, model), f_out)
 
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
 # load the model
 
-# In[27]:
+# In[71]:
 
 
 import pickle
 
 
-# In[29]:
+# In[72]:
 
 
 model_file = 'model_C=1.0.bin'
 
 
-# In[30]:
+# In[73]:
 
 
-with open(output_file, 'wb') as f_out: # 'wb' means write-binary
-    pickle.dump((dv, model), f_out)
+with open(output_file, 'rb') as f_in: # 'wb' means write-binary
+    dv, model = pickle.load(f_in)
 
 
-# In[32]:
+# In[74]:
 
 
 dv, model
 
 
-# In[33]:
+# In[75]:
 
 
 customer = {
@@ -235,34 +225,28 @@ customer = {
 }
 
 
-# In[34]:
+# In[78]:
 
 
 X = dv.transform([customer])
 
 
-# In[35]:
+# In[79]:
 
 
 X
 
 
-# In[38]:
+# In[80]:
 
 
 model.predict_proba(X)
 
 
-# In[40]:
+# In[81]:
 
 
 model.predict_proba(X)[0, 1]
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
